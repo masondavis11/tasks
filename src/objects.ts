@@ -1,4 +1,4 @@
-import { findAllByTestId } from "@testing-library/dom";
+//import { findAllByTestId } from "@testing-library/dom";
 import { Question, QuestionType } from "./interfaces/question";
 
 /**
