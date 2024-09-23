@@ -1,6 +1,6 @@
 import { Answer } from "./interfaces/answer";
 import { Question, QuestionType } from "./interfaces/question";
-import { makeBlankQuestion } from "./objects";
+import { duplicateQuestion, makeBlankQuestion } from "./objects";
 
 /**
  * Consumes an array of questions and returns a new array with only the questions
@@ -21,9 +21,9 @@ export function getPublishedQuestions(questions: Question[]): Question[] {
 export function getNonEmptyQuestions(questions: Question[]): Question[] {
     const emptyQuestions = questions.filter(
         (question: Question): boolean =>
-            question.body === "" &&
-            question.expected === "" &&
-            question.options.length === 0,
+            question.body != "" ||
+            question.expected != "" ||
+            question.options.length != 0,
     );
     return emptyQuestions;
 }
@@ -120,7 +120,7 @@ export function toCSV(questions: Question[]): string {
     const questionCSV = questions
         .map(
             (question: Question): string =>
-                `  ${question.id},${question.name},${question.options.length},${question.points},${question.published}`,
+                `${question.id},${question.name},${question.options.length},${question.points},${question.published}`,
         )
         .join("\n");
     return "id,name,options,points,published" + "\n" + questionCSV;
@@ -235,13 +235,39 @@ export function changeQuestionTypeById(
  * Remember, if a function starts getting too complicated, think about how a helper function
  * can make it simpler! Break down complicated tasks into little pieces.
  */
+
+export function helper(
+    options: string[],
+    targetOptionIndex: number,
+    newOption: string,
+): string[] {
+    if (targetOptionIndex === -1) {
+        return [...options, newOption];
+    } else {
+        const editedArray = options.map(
+            (option: string, optionIndex: number): string =>
+                optionIndex === targetOptionIndex ? newOption : option,
+        );
+        return editedArray;
+    }
+}
+
 export function editOption(
     questions: Question[],
     targetId: number,
     targetOptionIndex: number,
     newOption: string,
 ): Question[] {
-    return [];
+    const targetIdQuestion = questions.map(
+        (question: Question): Question => ({
+            ...question,
+            options:
+                question.id === targetId ?
+                    helper(question.options, targetOptionIndex, newOption)
+                :   question.options,
+        }),
+    );
+    return targetIdQuestion;
 }
 
 /***
@@ -258,4 +284,14 @@ export function duplicateQuestionInArray(
     const targetIdIndex = questions.findIndex(
         (question: Question): boolean => question.id === targetId,
     );
+    const duplicatedQuestion = duplicateQuestion(
+        newId,
+        questions[targetIdIndex],
+    );
+    const newQuestionsArray = [
+        ...questions.slice(0, targetIdIndex + 1),
+        duplicatedQuestion,
+        ...questions.slice(targetIdIndex + 1, questions.length),
+    ];
+    return newQuestionsArray;
 }
